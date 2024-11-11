@@ -1,6 +1,8 @@
 import os
 import csv
 import re
+import psycopg2
+import json
 
 class Movie:
     def __init__(self,name,year,director):
@@ -8,46 +10,60 @@ class Movie:
         self.year = year
         self.director = director
 
+def conn_to_db():
+    conn = psycopg2.connect(
+        dbname="movies",
+        user="hris",
+        password="superpassword",
+        host="movie-db",
+        port="5432"
+    )
+    return conn
+
 def getAll():
-    if os.path.exists("data.csv"):
-        with open("data.csv","r") as filmsFile:
-            reader = csv.DictReader(filmsFile,)
-            l = list(reader)
-            movies = {m["name"] : m for m in l }
-            for movieId in movies:
-               print(movies[movieId]['name'], "Director: " + movies[movieId]['director'], "Release Date: " + movies[movieId]['year'],sep=" - ")
-                
+    conn = conn_to_db()
+    cursor = conn.cursor()
+    cursor.execute("select to_json(json_build_object('Name',name,'Director',director,'Year',year)) as data from films;")
+    movies = cursor.fetchall()
+    for movie in movies:
+        print(movie[0])
+    cursor.close()
+    conn.close()
+       
 
 def getByName(name):
-    if os.path.exists("data.csv"):
-        with open("data.csv","r") as filmsFile:
-            reader = csv.DictReader(filmsFile,)
-            l = list(reader)
-            movies = {m["name"] : m for m in l }
-            for movie in movies:
-              if re.search(name, movie, re.IGNORECASE):
-                print(movies[movie]['name'], "Director: " + movies[movie]['director'], "Release Date: " + movies[movie]['year'],sep=" - " )
+    conn = conn_to_db()
+    cursor = conn.cursor()
+    query= "select to_json(json_build_object('Name',name,'Director',director,'Year',year)) as data from films where name ilike %s"
+    cursor.execute(query,("%" + name +"%",))
+    movies = cursor.fetchall()
+    for movie in movies:
+        print(movie[0])
+    cursor.close()
+    conn.close()
               
 
 def getByYear(year):
-    if os.path.exists("data.csv"):
-        with open("data.csv","r") as filmsFile:
-            reader = csv.DictReader(filmsFile,)
-            l = list(reader)
-            movies = {m["name"] : m for m in l }
-            for movie in movies:
-              if year in movies[movie]['year']:
-                 print(movies[movie]['name'], "Director: " + movies[movie]['director'], "Release Date: " + movies[movie]['year'],sep=" - " )
+    conn = conn_to_db()
+    cursor = conn.cursor()
+    query= "select to_json(json_build_object('Name',name,'Director',director,'Year',year)) as data from films where year ilike %s"
+    cursor.execute(query,("%" + year +"%",))
+    movies = cursor.fetchall()
+    for movie in movies:
+        print(movie[0])
+    cursor.close()
+    conn.close()
 
 def getByDirector(director):
-    if os.path.exists("data.csv"):
-        with open("data.csv","r") as filmsFile:
-            reader = csv.DictReader(filmsFile,)
-            l = list(reader)
-            movies = {m["name"] : m for m in l }
-            for movie in movies:
-              if re.search(director, movies[movie]['director'], re.IGNORECASE):
-                print(movies[movie]['name'], "Director: " + movies[movie]['director'], "Release Date: " + movies[movie]['year'],sep=" - " )
+    conn = conn_to_db()
+    cursor = conn.cursor()
+    query= "select to_json(json_build_object('Name',name,'Director',director,'Year',year)) as data from films where director ilike %s"
+    cursor.execute(query,("%" + director +"%",))
+    movies = cursor.fetchall()
+    for movie in movies:
+        print(movie[0])
+    cursor.close()
+    conn.close()
 
 def updateMovies(movies):
     fields = ['name','year','director']
@@ -67,6 +83,29 @@ movies = {
    "Home Alone 2": Movie("Home Alone 2","1992","Chris Columbus"),
    "The Exorcist 3": Movie("The Exorcist 3","1990", "William Peter Blatty")
 }
+
+
+
+"""def conn_to_db():
+    conn = psycopg2.connect(
+        dbname="movies",
+        user="hris",
+        password="superpassword",
+        host="movie-db",
+        port="5432"
+    )
+    cursor = conn.cursor()
+    movies = getAll()
+    for movieId in movies:
+      cursor.execute(""" 
+                  # INSERT INTO films (name,director,year)
+                 #  VALUES (%s, %s, %s);
+                  # """, (movies[movieId]['name'] ,movies[movieId]['director'], movies[movieId]['year']))
+      #conn.commit()
+
+
+    #cursor.close()
+    #conn.close()"""
 
 choice = 0
 
