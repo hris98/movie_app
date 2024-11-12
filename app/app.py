@@ -8,7 +8,7 @@ POSTGRES_DB = os.environ['POSTGRES_DB']
 POSTGRES_USER = os.environ['POSTGRES_USER']
 POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
 POSTGRES_PORT = os.environ['POSTGRES_PORT']
-POSTGRES_HOST = "movie_app-postgres-db-1"
+POSTGRES_HOST = os.environ['POSTGRES_HOST']
 
 
 class Movie:
@@ -104,10 +104,13 @@ def getByGenre(genre):
     conn.close()
 
 
-print("\n 1: List all Movies\n","2: Search movie by name\n","3: Search movie by release date\n","4: Search movie by director\n","5: Update data file\n","6: Search by genre\n","7: Exit")
 
+
+
+
+
+print("\n 1: List all Movies\n","2: Search movie by name\n","3: Search movie by release date\n","4: Search movie by director\n","5: Update data file\n","6: Search by genre\n","7: Exit")
 choice = int(sys.argv[1])
-print(type(choice))
 
 match choice:
     case 1:
