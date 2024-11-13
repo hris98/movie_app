@@ -12,7 +12,7 @@ services:
       - POSTGRES_HOST=postgres-db
       - FLASK_APP=/app/app.py
     ports:
-      - 5000:5000
+      - :5000
     depends_on:
        postgres-db:
          condition: service_healthy
@@ -29,8 +29,6 @@ services:
       - POSTGRES_PASSWORD=superpassword
       - POSTGRES_PORT=5432
       - POSTGRES_USER=hris
-    ports:
-      - 5432:5432
     volumes:
       - ./postgrace-db/data.sql:/docker-entrypoint-initdb.d/data.sql
       - ./postgrace-db/storage:/var/lib/postgresql/data/
