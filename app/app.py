@@ -1,8 +1,7 @@
 import os
 import psycopg2
-import json
-import csv
-import sys
+from flask import Flask
+from flask import request
 
 POSTGRES_DB = os.environ['POSTGRES_DB']
 POSTGRES_USER = os.environ['POSTGRES_USER']
@@ -27,68 +26,57 @@ def conn_to_db():
     )
     return conn
 
-def getAllFromCsv():
-    if os.path.exists("data.csv"):
-        with open("data.csv","r") as filmsFile:
-            reader = csv.DictReader(filmsFile,)
-            l = list(reader)
-            movies = {m["name"] : m for m in l }
-            return movies
 
 def getAll():
+    res = {}
     conn = conn_to_db()
     cursor = conn.cursor()
     cursor.execute("select to_json(json_build_object('Name',name,'Director',director,'Year',year,'Generes',genres)) as data from films;")
-    movies = cursor.fetchall()
-    for movie in movies:
-        print(movie[0])
+    l = cursor.fetchall()
+    movies = [m[0] for m in l]
     cursor.close()
     conn.close()
-       
+    return movies
 
 def getByName(name):
     conn = conn_to_db()
     cursor = conn.cursor()
     query= "select to_json(json_build_object('Name',name,'Director',director,'Year',year,'Generes',genres)) as data from films where name ilike %s"
     cursor.execute(query,("%" + name +"%",))
-    movies = cursor.fetchall()
-    for movie in movies:
-        print(movie[0])
+    l = cursor.fetchall()
+    movies = [m[0] for m in l]
     cursor.close()
     conn.close()
-              
+    return movies
 
 def getByYear(year):
     conn = conn_to_db()
     cursor = conn.cursor()
     query= "select to_json(json_build_object('Name',name,'Director',director,'Year',year,'Generes',genres)) as data from films where year ilike %s"
     cursor.execute(query,("%" + year +"%",))
-    movies = cursor.fetchall()
-    for movie in movies:
-        print(movie[0])
+    l = cursor.fetchall()
+    movies = [m[0] for m in l]
     cursor.close()
     conn.close()
+    return movies
 
 def getByDirector(director):
     conn = conn_to_db()
     cursor = conn.cursor()
     query= "select to_json(json_build_object('Name',name,'Director',director,'Year',year,'Generes',genres)) as data from films where director ilike %s"
     cursor.execute(query,("%" + director +"%",))
-    movies = cursor.fetchall()
-    for movie in movies:
-        print(movie[0])
+    l = cursor.fetchall()
+    movies = [m[0] for m in l]
     cursor.close()
     conn.close()
+    return movies
 
-def updateMovies():
+def updateMovies(data):
     conn = conn_to_db()
     cursor = conn.cursor()
     query= "INSERT INTO films (name,director,year,genres) VALUES(%s,%s,%s,%s)"
-    movies = getAllFromCsv()
-    for movieID in movies:
-      genres = { genre for genre in movies[movieID]['genres'].split('-')}
-      cursor.execute(query,(movies[movieID]['name'],movies[movieID]['director'],movies[movieID]['year'],movies[movieID]['genres'].split('-')))
-      conn.commit()
+    cursor.execute(query,(data['Name'],data['Director'],data['Year'],data['Genres']))
+    conn.commit()
     cursor.close()
     conn.close()
 
@@ -97,44 +85,82 @@ def getByGenre(genre):
     cursor = conn.cursor()
     query= "select to_json(json_build_object('Name',name,'Director',director,'Year',year,'Generes',genres)) as data from films where %s = ANY(genres)"
     cursor.execute(query,(genre,))
-    movies = cursor.fetchall()
-    for movie in movies:
-        print(movie[0])
+    l = cursor.fetchall()
+    movies = [m[0] for m in l]
     cursor.close()
     conn.close()
+    return movies
+
+
+def validate(data):  #validate all of the fields in the  request data
+    if ('Name' not in data)  or (data['Name'] == ''):
+      return False
+    if ('Director' not in data)  or (data['Director'] == ''):
+       return False
+    if ('Year' not in data)  or (data['Year'] == ''):
+       return False
+    if ('Genres' not in data)  or (data['Genres'] == ''):
+       return False
+    else: return True
 
 
 
 
+app = Flask(__name__)
 
-
-
-print("\n 1: List all Movies\n","2: Search movie by name\n","3: Search movie by release date\n","4: Search movie by director\n","5: Update data file\n","6: Search by genre\n","7: Exit")
-choice = int(sys.argv[1])
-
-match choice:
-    case 1:
-        getAll()
-
-    case 2:
-        name = input("please type a movie name: ")
-        getByName(name)
-
-    case 3:
-        year = input("Please type a year ")
-        getByYear(year)
-
-    case 4:
-        director = input("Search for movies by director: ")
-        getByDirector(director)
-
-    case 5:
-        updateMovies()
-
-    case 6:
-        genre = input("Search for movies by genre: ")
-        getByGenre(genre)
+@app.route("/")
+def get_AllMovies():
+    movies = getAll()
+    if movies == []:
+        return  {"data": "No movies found"},400
+    else:
+        return movies,200
     
-    case 7:
-         exit()
-   
+@app.route('/film/<string:name>',methods=['GET'])
+def get_MovieByName(name):
+    movies = getByName(name)
+    print(name)
+    if movies == []:
+        return  {"data": "No movies found"},400
+    else:
+        return movies,200
+    
+
+@app.route('/director/<string:name>',methods=['GET'])
+def get_MovieByDirector(name):
+    movies = getByDirector(name)
+    if movies == None:
+      return  {"data": "No movies found"},400
+    else:
+        return movies,200
+    
+@app.route('/year/<string:year>',methods=['GET'])
+def get_MovieByYear(year):
+    movies = getByYear(year)
+    if movies == None:
+        return {"data": "No movies found"},400
+    else:
+        return movies,200
+    
+@app.route('/genre/<string:genre>',methods=['GET'])
+def get_MovieByGenre(genre):
+    movies = getByGenre(genre)
+    if movies == None:
+       return {"data": "No movies found"},400
+    else:
+        return movies,200
+    
+@app.route('/post/',methods=['POST'])
+def add_Movie():
+    data = request.json
+    if validate(data):
+      updateMovies(data)
+      return data,200
+    else:
+      return  {"data": "Incorrect data provided"},400
+    
+
+
+@app.route('/hostname',methods=['GET'])
+def hostname():
+       return os.environ['HOSTNAME'],200

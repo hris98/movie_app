@@ -9,11 +9,14 @@ services:
       - POSTGRES_DB=movies
       - POSTGRES_PASSWORD=superpassword
       - POSTGRES_PORT=5432
-      - POSTGRES_HOST=movie_app-postgres-db-1
+      - POSTGRES_HOST=postgres-db
+      - FLASK_APP=/app/app.py
+    ports:
+      - 5000:5000
     depends_on:
        postgres-db:
          condition: service_healthy
-    command: python app.py 1
+    command: gunicorn --bind 0.0.0.0:5000 app:app
 
   postgres-db:
     image: postgres:alpine
@@ -36,7 +39,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-        
+  
+  proxy:
+    image: nginx:latest
+    networks:
+      - movie-app
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
+    depends_on:
+      - app
 
 networks:
   movie-app:
