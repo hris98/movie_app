@@ -1,7 +1,7 @@
-name,year,director
-The Exorcist,1973,William Friedkin
-Hereditary,2018,Ari Aster
-A Nightmare on Elm Street,1984,Wes Craven
-Home Alone,1990,Chris Columbus
-Home Alone 2,1992,Chris Columbus
-The Exorcist 3,1990,William Peter Blatty
+name,year,director,genres
+The Exorcist,1973,William Friedkin,Horror-Body Horror
+Hereditary,2018,Ari Aster,Horror-Mystery
+A Nightmare on Elm Street,1984,Wes Craven,Horror-Teen Horror
+Home Alone,1990,Chris Columbus,Comedy-Family
+Home Alone 2,1992,Chris Columbus,Comedy-Family
+The Exorcist 3,1990,William Peter Blatty,Horror-Body Horror

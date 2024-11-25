@@ -1,0 +1,54 @@
+services:
+  app:
+    build: ./app/.
+    restart: always
+    networks:
+      - movie-app
+    environment:
+      - POSTGRES_USER=hris
+      - POSTGRES_DB=movies
+      - POSTGRES_PASSWORD=superpassword
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=postgres-db
+      - FLASK_APP=/app/app.py
+    ports:
+      - :5000
+    depends_on:
+       postgres-db:
+         condition: service_healthy
+    command: gunicorn --bind 0.0.0.0:5000 app:app
+
+  postgres-db:
+    image: postgres:alpine
+    restart: always
+    shm_size: 128mb
+    networks:
+      - movie-app
+    environment:
+      - POSTGRES_DB=movies
+      - POSTGRES_PASSWORD=superpassword
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=hris
+    volumes:
+      - ./postgrace-db/data.sql:/docker-entrypoint-initdb.d/data.sql
+      - ./postgrace-db/storage:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  proxy:
+    image: nginx:latest
+    networks:
+      - movie-app
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf:ro
+    depends_on:
+      - app
+
+networks:
+  movie-app:
+    external: true
